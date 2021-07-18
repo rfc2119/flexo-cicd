@@ -1,0 +1,464 @@
+version: 2.1
+
+
+# parameters:
+#   workflow-id:
+#     type: string
+#     # default: "cd0d8qrsenyt"   # for dev and testing. hint: RDS auto-generated ID
+#     default: "8add28dd"         # prod workflow id. uncomment when going to prod
+
+# commands:
+#  # TODO: needs improvment
+#  install-awscli-cmd:
+#    description: Installs AWS CLI
+#    # parameters:
+#    #   pkg-manager:
+#    #     type: string
+#    #     default: "apt"
+#    steps:
+#      - run:
+#          name: Install AWS CLI through Python 3
+#          when: on_fail     # TODO: this should not be here
+#          command: |
+#            # version=$(cat /proc/version)
+#            # if [[ "$version" =~ "deb" ]]; then
+#            if command -v "apt"; then
+#              CMD="apt install -y python3 python3-pip"
+#              if [ "$EUID" -ne 0 ]; then    # must be run by a priviliged user
+#                sudo $CMD
+#              else
+#                $CMD
+#              fi
+#            elif command -v "apk"; then
+#              apk add python3 py3-pip
+#            elif command -v "yum"; then
+#              yum install -y python3 python3-pip
+#            else
+#              echo "package manager not supported ?"
+#            fi
+#            python3 -m pip install awscli
+#
+#  destroy-environment:
+#    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+#    parameters:
+#      id:
+#        type: env_var_name  # see https://circleci.com/docs/2.0/reusing-config/#environment-variable-name
+#        default: ID
+#      install_deps:
+#        type: boolean
+#        default: false
+#    steps:
+#      - run:
+#          name: print statement
+#          when: on_fail
+#          command: echo << parameters.install_deps >> from top-level steps
+#      - when:
+#          condition:
+#            and:
+#              - << parameters.install_deps >>
+#              # TODO: start here. apparently on_fail inside a when inside steps always evaluates to true ?
+#              # find out, and continue to:
+#              # 1. work on the cloudfront-update branch. ensure a sane build, and use cloudfront
+#              # 2. take scnreenshots and urls
+#              # 3. use prometheus and grafana
+#              # 4. submit
+#              # 5. configure your personal vps to host password store and website
+#              # TODO: on_fail
+#              - on_fail
+#          steps:
+#            - run: echo << parameters.install_deps >> from 'when' step
+#            - install-awscli-cmd
+#      - run:
+#          name: Destroy environments
+#          when: on_fail   # will this works ?
+#          command: |
+#            aws s3 rm s3://udapeople-${<< parameters.id >>}/ --recursive
+#            aws cloudformation delete-stack --stack-name udapeople-frontend-${<< parameters.id >>}
+#            aws cloudformation delete-stack --stack-name udapeople-backend-${<< parameters.id >>}
+#            # TODO: cloudfront stack should not be created by hand
+#            # aws cloudformation delete-stack --stack-name udapeople-cloudfront
+
+            
+jobs:
+  build:
+    docker:
+      - image: cimg/go:1.16.6
+    steps:
+      - checkout
+      - run:
+          name: Build flexo
+          command: |
+            CGO_ENABLED=0 go build -a -ldflags "-s -w -extldflags '-static'" -o flexo
+      # persist the built binary
+      - persist_to_workspace:
+          paths:
+            - flexo
+
+  lint:
+    docker:
+      - image: cimg/go:1.16.6
+    steps:
+      - run:
+          name: Install and Run Go Linter
+          command: |
+            # add GOPATH to default path
+            export PATH=$PATH:$(go env GOPATH)
+            # binary will be $(go env GOPATH)/bin/golangci-lint
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.41.1
+            # run the linter
+            golangci-lint run
+
+  test:
+    docker:
+      - image: cimg/go:1.16.6
+    steps:
+      - checkout
+      - attach_workspace
+      - run: ls -l
+      - run: echo todo
+              
+
+  # see https://circleci.com/docs/2.0/env-vars
+#   deploy-infrastructure:
+#     docker:
+#       - image: amazon/aws-cli:latest
+#     environment:
+#       ID: << pipeline.parameters.workflow-id >>
+#     steps:
+#       - checkout
+#       - add_ssh_keys:
+#           fingerprints:
+#             - "13:19:d0:85:aa:eb:66:62:a6:99:db:99:a7:8d:5a:51"   # udacity project 3 key
+#       - run:
+#           yum install -y tar gzip
+#       - run:
+#           name: Ensure back-end infrastructure exists
+#           command: |
+#             aws cloudformation deploy \
+#               --template-file .circleci/files/backend.yml \
+#               --tags project="backend-$ID" \
+#               --stack-name "udapeople-backend-$ID" \
+#               --parameter-overrides ID=$ID
+#       - run:
+#           name: Ensure front-end infrastructure exist
+#           command: |
+#             aws cloudformation deploy \
+#               --template-file .circleci/files/frontend.yml \
+#               --tags project=frontend-$ID \
+#               --stack-name udapeople-frontend-$ID \
+#               --parameter-overrides ID=$ID
+#       - run:
+#           name: Add back-end ip to ansible inventory
+#           working_directory: .circleci/ansible
+#           command: |
+#             echo "cwd: $CIRCLE_WORKING_DIRECTORY"
+#             aws ec2 describe-instances \
+#               --filters Name="tag:Name,Values=backend-$ID" \
+#               --query 'Reservations[*].Instances[*].PublicIpAddress' \
+#               --output text | tee inventory.txt
+#             # TODO: you should append to the inventory, not overwrite
+#             # this works because we've only one host, but it fails to scale
+#             # $CIRCLE_WORKING_DIRECTORY defaults to "project"
+#             # see https://circleci.com/docs/2.0/configuration-reference/#jobs
+#             echo -e '[defaults]\nhost_key_checking = false' | tee ansible.cfg
+#       # this step requires tar and gzip to be installed on the image
+#       - persist_to_workspace:
+#           root: ~/
+#           paths:
+#             - project/.circleci/ansible/inventory.txt
+#             - project/.circleci/ansible/ansible.cfg
+#       # Here's where you will add some code to rollback on failure      
+#       - destroy-environment
+#         # TODO: delete previously deployed backend apps with pm2
+# 
+# 
+#   configure-infrastructure:
+#     docker:
+#       # Docker image here that supports Ansible
+#       # image: python:3.7-slim-buster
+#       # based on circleci's cimg/base which is an optimized ubuntu image
+#       - image: cimg/python:3.8
+#     steps:
+#       # Checkout code from git
+#       - checkout
+#       # Add ssh keys with fingerprint
+#       # thus adds private keys of fingerprint X to the server, so that you could
+#       # use ssh from within the server to other machines
+#       - add_ssh_keys:
+#         # in addition to copying private key from circleci, adds the following to config
+#         # Host !github.com *
+#         #   IdentitiesOnly no
+#         #     IdentityFile /home/circleci/.ssh/id_rsa_1319d085aaeb6662a699db99a78d5a51
+#           fingerprints:
+#             - "13:19:d0:85:aa:eb:66:62:a6:99:db:99:a7:8d:5a:51"   # udacity project 3 key
+#       # attach workspace
+#       # The workspace can be used to pass along unique data built during a job
+#       # to other jobs in the same workflow
+#       - attach_workspace:
+#           at: /              # TODO: redundant ?
+#       - restore_cache:
+#           keys: [v2-pip-cache]
+#       - run:
+#           name: Install dependencies
+#           command: |
+#             pip install ansible
+#       - save_cache:
+#           paths: [/home/circleci/.cache/pip]
+#           key: v2-pip-cache
+#       # TODO: why the duck does ansible not use host_key_checking except from ansible.cfg ?
+#       - run:
+#           name: Configure server
+#           no_output_timeout: 35m
+#           working_directory: .circleci/ansible
+#           command: |
+#             # cp /tmp/project/.circleci/ansible/inventory.txt ./  # TODO: redundant ?
+#             # echo -e '[defaults]\nhost_key_checking = false' | tee ansible.cfg
+#             # echo -e '[web:vars]\nhost_key_checking=false' | tee -a inventory.txt
+#             # export ANSIBLE_HOST_KEY_CHECKING=False
+#             ansible-playbook configure-server.yml  -i inventory.txt -vvvv
+#             #-e 'ansible_host_key_checking=false'\
+#             # -e 'ansible_connection=ssh'\
+#             # -e 'ansible_user=ubuntu' \
+#             # exit 1
+#       # Here's where you will add some code to rollback on failure      
+# 
+#   deploy-frontend:
+#     docker:
+#       # Docker image here that supports AWS CLI
+#       - image: amazon/aws-cli:latest
+#     environment:
+#       ID: << pipeline.parameters.workflow-id >>
+#     steps:
+#       - checkout
+#       - run:
+#           name: Install docker image dependencies (and attach_workspace)
+#           command: |
+#             curl -O https://rpm.nodesource.com/setup_13.x   # saves output as setup_13.x
+#             bash setup_13.x
+#             yum install -y tar gzip nodejs
+#             # cd frontend
+#             # npm install webpack # install webpack
+#             # npm run build
+#       - restore_cache:
+#           keys: [frontend-build]
+#       - attach_workspace:
+#           at: /
+#       - restore_cache:
+#           keys: [frontend-build]
+#       - run:
+#           name: Get backend url and bake it into the frontend code
+#           command: |
+#             echo "backend ip from ansible: $(cat .circleci/ansible/inventory.txt)"
+#             # TODO: inventory.txt will not contain only the backend ip (extract the ip)
+#             export BACKEND_IP=$(cat .circleci/ansible/inventory.txt)
+#             export API_URL="http://${BACKEND_IP}:3030"
+#             echo "Backend API URL: ${API_URL}"
+#             cd frontend
+#             npm install webpack # TODO: why ? isn't this already installed ?
+#             npm run build   # bakes the API_URL into the generated code
+#       - run:
+#           name: Deploy frontend objects
+#           command: |
+#             # copy the compiled files to our public s3 bucket (destination: bucket/file1)
+#             # s3 bucket name is semi hard-coded in files/cloudfront.yml
+#             export BUCKET_NAME="udapeople-${ID}"
+#             echo "bucket name: $BUCKET_NAME"
+#             aws s3 sync frontend/dist s3://${BUCKET_NAME}/  
+#       # Here's where you will add some code to rollback on failure      
+#       - revert-migrations
+#                     
+# 
+#   deploy-backend:
+#     docker:
+#       - image: cimg/python:3.8
+#       # Docker image here that supports Ansible
+#     environment:
+#       ID: << pipeline.parameters.workflow-id >>
+#     steps:
+#       # Checkout code from git
+#       - checkout
+#       # Add ssh keys with fingerprint
+#       - add_ssh_keys:
+#           fingerprints:
+#             - "13:19:d0:85:aa:eb:66:62:a6:99:db:99:a7:8d:5a:51"   # udacity project 3 key
+#       # attach workspace
+#       - attach_workspace:
+#           at: ~/
+#       - restore_cache:
+#           keys: [v2-pip-cache, backend-build]
+#       - run:
+#           name: Install ansible and rsync
+#           command: |
+#             pip install ansible
+#             sudo apt update && sudo apt install -y rsync
+#       - run:
+#           name: Install node
+#           command: |
+#             curl -O https://deb.nodesource.com/setup_13.x   # saves output as setup_13.x
+#             sudo bash setup_13.x
+#             sudo apt install -y nodejs
+#       - restore_cache:
+#           keys:
+#             - backend-build
+#       - run:
+#           name: build backend with correct env vars (refactor me)
+#           command: |
+#             cd backend
+#             echo "NODE_ENV=production" > .env
+#             echo "TYPEORM_CONNECTION=$TYPEORM_CONNECTION" >> .env
+#             echo "TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR" >> .env
+#             echo "TYPEORM_ENTITIES=$TYPEORM_ENTITIES" >> .env
+#             echo "TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS" >> .env
+#             echo "TYPEORM_HOST=$TYPEORM_HOST" >> .env
+#             echo "TYPEORM_PORT=$TYPEORM_PORT" >> .env
+#             echo "TYPEORM_USERNAME=$TYPEORM_USERNAME" >> .env
+#             echo "TYPEORM_PASSWORD=$TYPEORM_PASSWORD" >> .env
+#             echo "TYPEORM_DATABASE=$TYPEORM_DATABASE" >> .env
+#             # cat .env
+#             npm install typescript  # install typescript (no need to install ALL packages)
+#             npm run build
+#       - run:
+#           name: Deploy backend
+#           working_directory: .circleci/ansible/
+#           command: |
+#             echo "inventory: $(cat inventory.txt)"
+#             ansible-playbook deploy-backend.yml -i inventory.txt -vvvv
+#       # Here's where you will add some code to rollback on failure  
+#       - revert-migrations
+#       - destroy-environment:
+#           install_deps: true
+# 
+#   smoke-test:
+#     docker:
+#       - image: alpine:latest
+#     environment:
+#       ID: << pipeline.parameters.workflow-id >>
+#     steps:
+#       - checkout
+#       - run:
+#           name: Install dependencies
+#           command: |
+#             apk add --no-cache gzip tar curl
+#             # NOTE: used for reverting migrations if failed
+#             apk add --no-cache nodejs npm       # TODO: specify nodejs version
+#       - attach_workspace:
+#           at: ~/
+#       - run:
+#           name: Backend smoke test.
+#           working_directory: .circleci/ansible
+#           command: |
+#             # TODO: inventory.txt will not contain only the backend ip (extract the ip)
+#             export BACKEND_IP=$(cat inventory.txt)
+#             export API_URL="http://${BACKEND_IP}:3030"
+#             echo "API URL: $API_URL"
+#             curl -s "${API_URL}/api/status" | grep "ok"  # TODO: update this
+#             if [ $? -ne 0 ]
+#             then
+#               exit 1
+#             fi
+#       - run:
+#           name: Frontend smoke test.
+#           command: |
+#             # TODO: region is hard-coded
+#             export FRONTEND_URL="http://udapeople-${ID}.s3-website.ap-northeast-2.amazonaws.com"
+#             curl -s "${FRONTEND_URL}" | grep "Welcome"    # should return a non-zero rc if failed
+#             if [ $? -ne 0 ]
+#             then
+#               exit 1
+#             fi
+#       - revert-migrations
+#       # TODO: uncomment me at prod
+#       - destroy-environment:
+#           install_deps: true
+# 
+#   cloudfront-update:
+#     docker:
+#      - image: amazon/aws-cli:latest
+#     environment:
+#       # same as env var ID. the name was changed for clarity
+#       PROD_WORKFLOW_ID: << pipeline.parameters.workflow-id >>
+#     steps:
+#       - checkout
+#       - run:
+#           name: Install dependencies
+#           command: |
+#             # your code here
+#       - run:
+#           name: Update cloudfront distribution
+#           command: |
+#             export DEV_WORKFLOW_ID=$(aws cloudformation list-exports --query "Exports[?Name=='WorkflowID'].Value" --no-paginate --output text)
+#             echo "old id: $DEV_WORKFLOW_ID; new: $PROD_WORKFLOW_ID"
+#             if [[ "$DEV_WORKFLOW_ID" != "$PROD_WORKFLOW_ID" ]]
+#             then
+#               echo "Update existing CloudFront stack with the new id"
+#               aws cloudformation update-stack --stack-name udapeople-cloudfront --use-previous-template --parameters ParameterKey=WorkflowID,ParameterValue=${PROD_WORKFLOW_ID}
+#               # else              
+#               # echo "Create CloudFront stack"
+#               # aws cloudformation create-stack  \
+#               #   --stack-name udapeople-cloudfront \
+#               #   --template-body file://./.circleci/files/cloudfront.yml \
+#               #   --parameters ParameterKey=WorkflowID,ParameterValue=${CIRCLE_WORKFLOW_ID:0:7} \
+#               #   --tags 'Key=project,Value=udapeople'            
+#               echo "Destroy old environment"
+#               aws s3 rm s3://udapeople-frontend-${DEV_WORKFLOW_ID}/ --recursive
+#               aws cloudformation delete-stack --stack-name udapeople-frontend-${DEV_WORKFLOW_ID}
+#               aws cloudformation delete-stack --stack-name udapeople-backend-${DEV_WORKFLOW_ID}
+#             fi
+#       # Here's where you will add some code to rollback on failure
+#       # TODO: uncomment me at prod
+#       - revert-migrations:
+#           id: PROD_WORKFLOW_ID
+#       - destroy-environment:
+#           id: PROD_WORKFLOW_ID
+# 
+# cleanup:
+#     docker:
+#       # Docker image here
+#     steps:
+#       # Checkout code from git
+#       - run:
+#           name: Get old stack workflow id
+#           command: |
+#             # your code here
+#             export OldWorkflowID="the id here"
+#             export STACKS=[] #put the list of stacks here
+#       - run:
+#           name: Remove old stacks and files
+#           command: |
+#             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+#             then
+#               # your code here
+#             fi
+            
+
+workflows:
+  default:
+    jobs:
+      - lint
+      - build
+      - test:
+          requires: [build]
+      # - deploy:
+      #     requires: [test, scan]
+      #     # TODO: remove me in prod (the next line)
+      #     # requires: [build-backend]
+      #     filters:
+      #       branches:
+      #         only: [main]
+      # - configure-infrastructure:
+      #     requires: [deploy-infrastructure]
+      # - run-migrations:
+      #     requires: [configure-infrastructure]
+      #     # requires: [deploy-infrastructure]   # TODO: this is not the correct 'require'. use ^ instead
+      # - deploy-frontend:
+      #     requires: [run-migrations]
+      #     # requires: [deploy-infrastructure]   # TODO: this is not the correct 'require'. use ^ instead
+      # - deploy-backend:
+      #     requires: [run-migrations]
+      #     # requires: [deploy-infrastructure]   # TODO: this is not the correct 'require'. use ^ instead
+      # - smoke-test:
+      #     requires: [deploy-backend, deploy-frontend]
+      # - cloudfront-update:
+      #     requires: [smoke-test]
+      # - cleanup:
+      #     requires: [cloudfront-update]
