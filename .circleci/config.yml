@@ -88,11 +88,12 @@ jobs:
       - run:
           name: Build flexo
           command: |
-            CGO_ENABLED=0 go build -a -ldflags "-s -w -extldflags '-static'" -o flexo
+            CGO_ENABLED=0 go build -a -ldflags "-s -w -extldflags '-static'" -o ./flexo.bin
       # persist the built binary
       - persist_to_workspace:
+          root: /home/circleci/project/   # TODO: redundant
           paths:
-            - flexo
+            - flexo.bin
 
   lint:
     docker:
@@ -102,7 +103,8 @@ jobs:
           name: Install and Run Go Linter
           command: |
             # add GOPATH to default path
-            export PATH=$PATH:$(go env GOPATH)
+            export GOPATH=$(go env GOPATH)
+            export PATH=$PATH:$GOPATH
             # binary will be $(go env GOPATH)/bin/golangci-lint
             curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.41.1
             # run the linter
@@ -113,7 +115,8 @@ jobs:
       - image: cimg/go:1.16.6
     steps:
       - checkout
-      - attach_workspace
+      - attach_workspace:
+          at: /home/circleci/project/   # TODO: redundant.
       - run: ls -l
       - run: echo todo
               
