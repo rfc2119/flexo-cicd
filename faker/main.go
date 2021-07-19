@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/bxcodec/faker/v3"
+	"github.com/bxcodec/faker"
 	"gorm.io/gorm"
 
 	"flexo/model"

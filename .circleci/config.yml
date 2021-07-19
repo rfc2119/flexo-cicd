@@ -109,7 +109,7 @@ jobs:
             # binary will be $(go env GOPATH)/bin/golangci-lint
             curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.41.1
             # run the linter
-            golangci-lint run
+            golangci-lint run --disable-all -E govet,gosimple
 
   test:
     docker:
