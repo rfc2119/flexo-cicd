@@ -120,7 +120,10 @@ jobs:
           at: /home/circleci/project/   # TODO: redundant.
       - run: ls -l
       - run: echo todo
-              
+      - run:
+          name: testing docker compose
+          command: |
+            SECRET=zbeul DB_USER=flexo docker-compose up
 
   # see https://circleci.com/docs/2.0/env-vars
 #   deploy-infrastructure:
