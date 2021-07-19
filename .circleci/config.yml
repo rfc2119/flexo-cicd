@@ -99,6 +99,7 @@ jobs:
     docker:
       - image: cimg/go:1.16.6
     steps:
+      - checkout
       - run:
           name: Install and Run Go Linter
           command: |
