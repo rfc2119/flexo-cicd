@@ -528,7 +528,7 @@ workflows:
           requires: [test, push]
           filters:
             branches:
-              only: [deploy-to-eks]
+              only: [deploy_to_eks]
       # - configure-infrastructure:
       #     requires: [deploy-infrastructure]
       # - run-migrations:
