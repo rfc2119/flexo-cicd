@@ -1,0 +1,26 @@
+# TODO: hard-coded values
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: udacity-capstone-proj
+  labels:
+    name: udacity-capstone-proj
+spec:
+  replicas: 3
+  selector:     # how will the deployment find its pods ?
+    matchLabels:        # should satisfy the labels provided by pods
+      name: flexo
+  template:
+    metadata:
+      name: flexo-engine
+      labels:   # pods labels. creates selectors for pods
+        name: flexo
+    spec:
+      containers:       # containers running on this pod (only one here)
+      - name: flexo
+        image: staticnotdynamic/udacity-proj3
+        # TODO: start here
+        # ports:        # TODO: does this expose ports ?
+        #   - containerPort: 80
+      imagePullSecrets:
+      - name: dockerhub-token       # TODO

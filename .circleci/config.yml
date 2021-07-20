@@ -189,7 +189,6 @@ jobs:
           no_output_timeout: 30m
           command: |
             # original code: github.com/weibeld/eks-cloudformation
-            echo todo
             ./up.sh \
               --num-worker-nodes 2 \
               --worker-nodes-instance-type t2.small \
@@ -198,9 +197,15 @@ jobs:
       - run:
           name: Deploy our application
           command: |
-            echo todo
-            aws eks update-kubeconfig --name eks-cluster
+            aws eks update-kubeconfig --name eks-cluster    # TODO: hard-coded cluster/stack name
             kubectl get --all-namespaces svc
+            # TODO: start here. modify deployment.yaml file to fetch the flexo image from private ECR
+            # then, apply the spec using "kubectl apply -f <file>". you need to figure out how to
+            # source the repo name (an env var, considered a secret) inside k8s
+            # after that, it is expected that no other permission is needed to grab the private
+            # docker image (see https://docs.aws.amazon.com/AmazonECR/latest/userguide/ECR_on_EKS.html)
+            # after that, try to use ansible to do anything useful. this way you would have used all
+            # components learned in these courses
             echo todo
 
   # see https://circleci.com/docs/2.0/env-vars
