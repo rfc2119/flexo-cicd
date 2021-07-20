@@ -126,7 +126,7 @@ jobs:
 
   push:
     docker:
-      - image: amazon/awscli:latest
+      - image: amazon/aws-cli:latest
     environment:
       IMG_NAME: << pipeline.parameters.docker-image-name >>
     steps:
