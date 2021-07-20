@@ -3,6 +3,13 @@
 Flexo is the scoring enigne for SECCDC, written in Go. This repository should offer a simple CI/CD pipeline in accordance with Udacity's Nanodegree capstone project.
 
 
+## Scanning
+I was going to setup my own [Clair](https://github.com/quay/clair) server using [this](https://aws.amazon.com/blogs/compute/scanning-docker-images-for-vulnerabilities-using-clair-amazon-ecs-ecr-aws-codepipeline/) CloudFormation template as basis, but I did find out that Amazon ECR uses Clair. Unfortunately, Docker image scanning is unsupported, as the Dockerfile uses a multi-build setup concluding with the *scratch* image, which is unsupported by Amazon ECR:
+
+> Amazon ECR does not support scanning images built from the Docker scratch image
+
+I might change the Dockerfile to use another OS as base OS, but then the image size would definitely quadruple
+
 ## Quickstart
 
 ### Running with docker-compose
