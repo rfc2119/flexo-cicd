@@ -124,6 +124,7 @@ jobs:
       #     command: |
       #       SECRET=halp DB_USER=flexo docker-compose up
 
+
   push:
     # docker:
     #   - image: amazon/aws-cli:latest
@@ -153,6 +154,33 @@ jobs:
             docker tag $IMG_NAME:latest $ECR_REGISTRY/$IMG_NAME:latest
             docker push $ECR_REGISTRY/$IMG_NAME:latest
 
+  deploy-to-eks:
+    docker:
+      - image: amazon/aws-cli:latest
+    environment:
+      IMG_NAME: << pipeline.parameters.docker-image-name >>
+    steps:
+      - checkout
+      # - run:
+      #     name: Install AWS CLI through curl
+      #     command: |
+      #       # see https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
+      #       curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      #       unzip -q awscliv2.zip
+      #       sudo ./aws/install
+      - run:
+          name: Install git
+          command: yum install git
+      # see https://circleci.com/docs/2.0/configuration-reference/?section=configuration#checkout
+      - run: git submodule sync
+      - run: git submodule update --init
+      - run:
+          name: Deploy EKS cluster
+          command: |
+            # original code: github.com/weibeld/eks-cloudformation
+            git clone https://github.com/rfc2119/eks-cloudformation
+            cd eks-cloudformation
+            echo todo
 
 
   # see https://circleci.com/docs/2.0/env-vars
