@@ -128,7 +128,7 @@ jobs:
     docker:
       - image: amazon/awscli:latest
     environment:
-      IMG_NAME: << pipelines.parameters.docker-image-name >>
+      IMG_NAME: << pipeline.parameters.docker-image-name >>
     steps:
       - checkout
       - run:
