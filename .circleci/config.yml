@@ -125,15 +125,22 @@ jobs:
       #       SECRET=halp DB_USER=flexo docker-compose up
 
   push:
-    docker:
-      - image: amazon/aws-cli:latest
+    # docker:
+    #   - image: amazon/aws-cli:latest
+    machine: true
     environment:
       IMG_NAME: << pipeline.parameters.docker-image-name >>
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: false
-          version: "20.10.2"
+      # - setup_remote_docker:
+      #     docker_layer_caching: false
+      #     version: "20.10.2"
+      - run:
+          name: Install AWS CLI through curl
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
       - run:
           name: Build docker image
           command: |
