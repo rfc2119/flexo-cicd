@@ -118,7 +118,7 @@ jobs:
       - attach_workspace:
           at: /home/circleci/project/   # TODO: redundant.
       - run: ls -l
-      - run: echo todo docker-compose (change the executor ?)
+      - run: echo "todo docker-compose (change the executor ?)"
       # - run:
       #     name: testing docker compose
       #     command: |
