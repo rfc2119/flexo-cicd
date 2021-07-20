@@ -131,6 +131,8 @@ jobs:
       IMG_NAME: << pipeline.parameters.docker-image-name >>
     steps:
       - checkout
+      - setup-remote-docker:
+          version: 20.10.2
       - run:
           name: Build docker image
           command: |
