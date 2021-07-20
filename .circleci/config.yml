@@ -186,6 +186,7 @@ jobs:
       - run:
           name: Deploy EKS cluster
           working_directory: eks-cloudformation
+          no_output_timeout: 30m
           command: |
             # original code: github.com/weibeld/eks-cloudformation
             echo todo
