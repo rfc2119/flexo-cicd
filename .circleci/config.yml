@@ -1,11 +1,10 @@
 version: 2.1
 
 
-# parameters:
-#   workflow-id:
-#     type: string
-#     # default: "cd0d8qrsenyt"   # for dev and testing. hint: RDS auto-generated ID
-#     default: "8add28dd"         # prod workflow id. uncomment when going to prod
+parameters:
+  docker-image-name:
+    type: string
+    default: "seccdc/flexo"
 
 # commands:
 #  # TODO: needs improvment
@@ -119,11 +118,31 @@ jobs:
       - attach_workspace:
           at: /home/circleci/project/   # TODO: redundant.
       - run: ls -l
-      - run: echo todo
+      - run: echo todo docker-compose (change the executor ?)
+      # - run:
+      #     name: testing docker compose
+      #     command: |
+      #       SECRET=halp DB_USER=flexo docker-compose up
+
+  push:
+    docker:
+      - image: amazon/awscli:latest
+    environment:
+      IMG_NAME: << pipelines.parameters.docker-image-name >>
+    steps:
+      - checkout
       - run:
-          name: testing docker compose
+          name: Build docker image
           command: |
-            SECRET=zbeul DB_USER=flexo docker-compose up
+            # ECR_REGISTRY is an envvar registered within circleci settings
+            pass=$(aws ecr get-login-password )
+            echo $pass | docker login --username AWS --password-stdin $ECR_REGISTRY
+            docker build -t $IMG_NAME .
+            docker images
+            docker tag $IMG_NAME:latest $ECR_REGISTRY/$IMG_NAME:latest
+            docker push $ECR_REGISTRY/$IMG_NAME:latest
+
+
 
   # see https://circleci.com/docs/2.0/env-vars
 #   deploy-infrastructure:
@@ -445,6 +464,8 @@ workflows:
       - build
       - test:
           requires: [build]
+      - push:
+          requires: [test]
       # - deploy:
       #     requires: [test, scan]
       #     # TODO: remove me in prod (the next line)

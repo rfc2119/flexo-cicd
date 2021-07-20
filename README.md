@@ -2,6 +2,7 @@
 
 Flexo is the scoring enigne for SECCDC, written in Go. This repository should offer a simple CI/CD pipeline in accordance with Udacity's Nanodegree capstone project.
 
+
 ## Quickstart
 
 ### Running with docker-compose
