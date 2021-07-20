@@ -175,13 +175,32 @@ jobs:
       - run: git submodule sync
       - run: git submodule update --init
       - run:
+          name: Install kubectl v1.21
+          command: |
+            # instructions: https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-kubectl-binary-with-curl-on-linux
+            curl -LO "https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl"
+            # validate signatures
+            curl -LO "https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl.sha256"
+            echo "$(<kubectl.sha256) kubectl" | sha256sum --check
+            install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      - run:
           name: Deploy EKS cluster
+          working_directory: eks-cloudformation
           command: |
             # original code: github.com/weibeld/eks-cloudformation
-            git clone https://github.com/rfc2119/eks-cloudformation
-            cd eks-cloudformation
             echo todo
-
+            ./up.sh \
+              --num-worker-nodes 2 \
+              --worker-nodes-instance-type t2.small \
+              --stack-name eks-cluster \
+              --key-pair-name udacity-nd-proj3
+      - run:
+          name: Deploy our application
+          command: |
+            echo todo
+            aws eks update-kubeconfig --name eks-cluster
+            kubectl get --all-namespaces svc
+            echo todo
 
   # see https://circleci.com/docs/2.0/env-vars
 #   deploy-infrastructure:
@@ -505,13 +524,11 @@ workflows:
           requires: [build]
       - push:
           requires: [test]
-      # - deploy:
-      #     requires: [test, scan]
-      #     # TODO: remove me in prod (the next line)
-      #     # requires: [build-backend]
-      #     filters:
-      #       branches:
-      #         only: [main]
+      - deploy-to-eks:
+          requires: [test, push]
+          filters:
+            branches:
+              only: [deploy-to-eks]
       # - configure-infrastructure:
       #     requires: [deploy-infrastructure]
       # - run-migrations:
