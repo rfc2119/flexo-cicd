@@ -518,14 +518,14 @@ jobs:
 workflows:
   default:
     jobs:
-      - lint
-      - build
-      - test:
-          requires: [build]
-      - push:
-          requires: [test]
+      # - lint
+      # - build
+      # - test:
+      #     requires: [build]
+      # - push:
+      #     requires: [test]
       - deploy-to-eks:
-          requires: [test, push]
+          # requires: [test, push]
           filters:
             branches:
               only: [deploy_to_eks]
