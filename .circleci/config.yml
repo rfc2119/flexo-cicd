@@ -528,11 +528,11 @@ workflows:
   default:
     jobs:
       # - lint
-      # - build
-      # - test:
-      #     requires: [build]
-      # - push:
-      #     requires: [test]
+      - build
+      - test:
+          requires: [build]
+      - push:
+          requires: [test]
       - deploy-to-eks:
           # requires: [test, push]
           filters:
