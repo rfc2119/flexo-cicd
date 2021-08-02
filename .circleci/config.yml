@@ -171,6 +171,7 @@ jobs:
       - run:
           name: Install git
           command: yum install -y git
+      # checking-out w/ git submodules
       # see https://circleci.com/docs/2.0/configuration-reference/?section=configuration#checkout
       - run: git submodule sync
       - run: git submodule update --init
@@ -185,7 +186,7 @@ jobs:
             install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
       - run:
           name: Deploy EKS cluster
-          working_directory: eks-cloudformation
+          working_directory: eks-cloudformation   # a git submodule
           no_output_timeout: 30m
           command: |
             # original code: github.com/weibeld/eks-cloudformation
@@ -198,6 +199,7 @@ jobs:
           name: Deploy our application
           command: |
             aws eks update-kubeconfig --name eks-cluster    # TODO: hard-coded cluster/stack name
+            echo $IMG_NAME
             kubectl get --all-namespaces svc
             # TODO: start here. modify deployment.yaml file to fetch the flexo image from private ECR
             # then, apply the spec using "kubectl apply -f <file>". you need to figure out how to
@@ -206,7 +208,8 @@ jobs:
             # docker image (see https://docs.aws.amazon.com/AmazonECR/latest/userguide/ECR_on_EKS.html)
             # after that, try to use ansible to do anything useful. this way you would have used all
             # components learned in these courses
-            echo todo
+            kubectl apply -f deployment.yaml
+            kubectl get deployments
 
   # see https://circleci.com/docs/2.0/env-vars
 #   deploy-infrastructure:

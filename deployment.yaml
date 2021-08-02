@@ -18,9 +18,13 @@ spec:
     spec:
       containers:       # containers running on this pod (only one here)
       - name: flexo
-        image: staticnotdynamic/udacity-proj3
+        # TODO: THIS SHOULD BE PRIVATE!
+        image: 421352775051.dkr.ecr.ap-northeast-2.amazonaws.com/seccdc/flexo:latest
         # TODO: start here
+        # env:
+        #   - name: IMG_NAME
+        #     value: $IMG_NAME    # TODO: will this work ? if so, then this is hardocded in circleci
         # ports:        # TODO: does this expose ports ?
         #   - containerPort: 80
-      imagePullSecrets:
-      - name: dockerhub-token       # TODO
+      # imagePullSecrets:
+      # - name: dockerhub-token       # TODO
