@@ -194,7 +194,8 @@ jobs:
               --num-worker-nodes 2 \
               --worker-nodes-instance-type t2.small \
               --stack-name eks-cluster \
-              --key-pair-name udacity-nd-proj3
+              --key-pair-name udacity-nd-proj3 \
+              --update-kubectl-context
       - run:
           name: Deploy our application
           command: |
