@@ -200,8 +200,6 @@ jobs:
           name: Deploy our application
           command: |
             aws eks update-kubeconfig --name eks-cluster    # TODO: hard-coded cluster/stack name
-            echo $IMG_NAME
-            kubectl get --all-namespaces svc
             # TODO: start here. modify deployment.yaml file to fetch the flexo image from private ECR
             # then, apply the spec using "kubectl apply -f <file>". you need to figure out how to
             # source the repo name (an env var, considered a secret) inside k8s

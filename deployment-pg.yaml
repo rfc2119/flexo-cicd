@@ -52,14 +52,17 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres
-  type: db
+  name: postgresql-dep
 spec:
   replicas: 1
+  selector:
+      matchLabels:
+        app: postgres
   template:
     metadata:
       labels:
         app: postgres
+        type: db          # extra kavek
     spec:
       containers:
         - name: postgres
