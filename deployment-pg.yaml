@@ -49,7 +49,7 @@ spec:
 
 ---
 # main pg deployment
-apiVersion: extensions/v1beta1  # TODO: why extensions API ?
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
