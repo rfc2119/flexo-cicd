@@ -532,10 +532,12 @@ workflows:
       # - build
       # - test:
       #     requires: [build]
+      - push
       # - push:
       #     requires: [test]
       - deploy-to-eks:
           # requires: [test, push]
+          requires: [push]
           filters:
             branches:
               only: [deploy_to_eks]
