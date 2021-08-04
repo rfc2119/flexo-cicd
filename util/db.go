@@ -84,5 +84,9 @@ func extractHostAndPort(address string) (string, string, error) {
 	// If not, is this an IP?
 	addr, err := net.ResolveTCPAddr("tcp", address)
 	fmt.Println(addr, err)
+	if err != nil {
+		fmt.Printf("address or IP %s could not be resolved", address)
+		return "", "", err
+	}
 	return addr.IP.String(), fmt.Sprintf("%d", addr.Port), err
 }
