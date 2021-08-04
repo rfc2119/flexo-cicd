@@ -2,6 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # Currently when a pod is created, its hostname is the Pod's metadata.name value.
   name: flexo-dep
   labels:
     app: flexo
@@ -25,8 +26,8 @@ spec:
         # TODO: start here
         env:
           - name: DBADDR
-            # value: postgresql-dep:5432   # TODO: will port num work ?
-            value: postgresql-dep # TODO: will port num work ?
+            value: postgresql-dep:5432   # TODO: will port num work ?
+            # value: postgresql-dep # TODO: will port num work ?
           - name: DBUSER
             value: "flexo" 
           - name: DBPASS
