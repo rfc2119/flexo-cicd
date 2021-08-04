@@ -75,15 +75,13 @@ func extractHostAndPort(address string) (string, string, error) {
 	// Is this a domain ?
 	splitAddr := strings.Split(address, ":")
 	addrs, e := net.LookupHost(splitAddr[0])
-	fmt.Printf("Looked up host: %s \nerror: %s", addrs, e)
 	if e == nil {
 		return splitAddr[0], splitAddr[1], nil
 	}
 
-	fmt.Println("Is this an IP ?")
+	fmt.Printf("Looked up host: %s \nerror: %s", addrs, e)
 	// If not, is this an IP?
 	addr, err := net.ResolveTCPAddr("tcp", address)
-	fmt.Println(addr, err)
 	if err != nil {
 		fmt.Printf("address or IP %s could not be resolved", address)
 		return "", "", err

@@ -27,13 +27,21 @@ spec:
         env:
           - name: DBADDR
             value: postgres-svc:5432   # TODO: will port num work ?
-            # value: postgresql-dep # TODO: will port num work ?
           - name: DBUSER
-            value: "flexo" 
+            valueFrom:
+              configMapKeyRef:
+                name: postgres-config
+                key: POSTGRES_USER
           - name: DBPASS
-            value: "flexo" 
+            valueFrom:
+              configMapKeyRef:
+                name: postgres-config
+                key: POSTGRES_PASSWORD
           - name: DBNAME
-            value: "flexo" 
+            valueFrom:
+              configMapKeyRef:
+                name: postgres-config
+                key: POSTGRES_DB
           - name: DBSSL
             value: "disable" 
           - name: SECRET
