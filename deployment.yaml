@@ -38,10 +38,11 @@ spec:
                 name: postgres-config
                 key: POSTGRES_PASSWORD
           - name: DBNAME
-            valueFrom:
-              configMapKeyRef:
-                name: postgres-config
-                key: POSTGRES_DB
+            value: postgresdb
+            # valueFrom:
+            #   configMapKeyRef:
+            #     name: postgres-config
+            #     key: POSTGRES_DB
           - name: DBSSL
             value: "disable" 
           - name: SECRET
