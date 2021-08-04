@@ -38,7 +38,7 @@ spec:
           - name: SECRET
             value: "shared_secret"
           - name: GIN_MODE
-            value: "production"
+            value: "release"
 
         ports:        # TODO: does this expose ports ?
           - containerPort: 8080
