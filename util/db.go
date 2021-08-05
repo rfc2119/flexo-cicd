@@ -25,7 +25,7 @@ package util
 import (
 	"fmt"
 	"net"
-	"os"
+	// "os"
 	"strings"
 
 	"github.com/SECCDC/flexo/model"
@@ -35,12 +35,12 @@ import (
 )
 
 func DBinit(user, pass, address, dbName, sslmode string) error {
-	db := DBcreate(user, pass, address, dbName, sslmode)
-	if db.Error != nil {
-		fmt.Println(db.Error)
-		fmt.Println("Could not create database")
-		os.Exit(3)
-	}
+	// db := DBcreate(user, pass, address, dbName, sslmode)
+	// if db.Error != nil {
+	// 	fmt.Println(db.Error)
+	// 	fmt.Println("Could not create database")
+	// 	os.Exit(3)
+	// }
 
 	return DBconnect(user, pass, address, dbName, sslmode).AutoMigrate(&model.Team{}, &model.Category{}, &model.Target{}, &model.Event{}, &model.EcomEvent{})
 }
