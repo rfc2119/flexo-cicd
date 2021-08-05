@@ -71,12 +71,13 @@ jobs:
           name: Build docker image
           command: |
             # ECR_REGISTRY is an envvar registered within circleci settings
-            pass=$(aws ecr get-login-password )
+            pass=$(aws ecr get-login-password)
             echo $pass | docker login --username AWS --password-stdin $ECR_REGISTRY
             docker build -t $IMG_NAME .
             docker images
-            docker tag $IMG_NAME:latest $ECR_REGISTRY/$IMG_NAME:latest
-            docker push $ECR_REGISTRY/$IMG_NAME:latest
+            TAG=$(git describe --abbrev=0 --tags)  # get the latest tag from current branch
+            docker tag $IMG_NAME:latest $ECR_REGISTRY/$IMG_NAME:$TAG
+            docker push $ECR_REGISTRY/$IMG_NAME:$TAG
 
   deploy-to-eks:
     docker:
@@ -119,20 +120,27 @@ jobs:
             aws eks update-kubeconfig --name eks-cluster    # TODO: hard-coded cluster/stack name
             kubectl apply -f deployment-pg.yaml
             kubectl get deployments
+            # update mechanism: use git to source the latest tag and pass it to k8s
+            # get the latest tag from main branch and pass it to kubernetes
+            # this should trigger a rolling update release if the tag is new
+            LATEST_TAG=$(git describe --abbrev=0 --tags)  # get the latest tag from current branch (main)
             kubectl apply -f deployment.yaml
+            kubectl set image -f deployment.yaml flexo=$ECR_REGISTRY/$IMG_NAME:$LATEST_TAG
             kubectl get deployments
 
 workflows:
   default:
     jobs:
-      - lint
-      - build
-      - test:
-          requires: [build]
-      - push:
-          requires: [test]
+      # - lint
+      # - build
+      # - test:
+      #     requires: [build]
+      - push
+      # - push:
+      #     requires: [test]
       - deploy-to-eks:
-          requires: [test, push]
+          # requires: [test, push]
+          requires: [push]
           filters:
             branches:
-              only: [main]
+              only: [deployment-strategy]

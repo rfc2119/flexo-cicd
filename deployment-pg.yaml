@@ -35,7 +35,6 @@ spec:
     path: "/mnt/data"
 
 ---
-# a PV claim is ...
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:

@@ -1,4 +1,6 @@
 # TODO: hard-coded values
+# TODO: heatlh check on pods (use ReadinessProbe)
+# TODO: failure recovery on deployments using kuberenetes rollout undo
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,6 +14,11 @@ spec:
     matchLabels:        # should satisfy the labels provided by pods
       app: flexo
       type: api
+	strategy:
+    type: RollingUpdate		# NOTE: default strategy; added here for verbosity
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1					# max #pods above the specified number of replicas
   template:
     metadata:
       name: flexo-engine
@@ -23,10 +30,9 @@ spec:
       - name: flexo
         # TODO: THIS SHOULD BE PRIVATE!
         image: 421352775051.dkr.ecr.ap-northeast-2.amazonaws.com/seccdc/flexo:latest
-        # TODO: start here
         env:
           - name: DBADDR
-            value: postgres-svc:5432   # TODO: will port num work ?
+            value: postgres-svc:5432   # TODO: will port num work ? -> yes it will
           - name: DBUSER
             valueFrom:
               configMapKeyRef:
@@ -48,11 +54,11 @@ spec:
             value: "shared_secret"
           - name: GIN_MODE
             value: "release"
-
-        ports:        # TODO: does this expose ports ?
+        ports:
           - containerPort: 8080
 
 ---
+# use this service to expose flexo's api to the world/teams
 apiVersion: v1
 kind: Service
 metadata:
