@@ -8,7 +8,10 @@ metadata:
   labels:
     app: postgres
 data:
-  POSTGRES_DB: postgresadmin    # TODO: remove me
+  # The POSTGRES_* environment variables are used to define the way that the databases
+  # get created and connected. If you have an existing database, you need to define
+  # the PG* environment variables so that you can connect to it.
+  POSTGRES_DB: postgresdb
   POSTGRES_USER: postgresadmin
   POSTGRES_PASSWORD: admin123
   PGDATA: "/var/lib/postgresql/data/pgdata"
@@ -62,7 +65,6 @@ spec:
     metadata:
       labels:
         app: postgres
-        type: db          # extra kavek
     spec:
       containers:
         - name: postgres
