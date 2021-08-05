@@ -8,7 +8,7 @@ metadata:
   labels:
     app: postgres
 data:
-  POSTGRES_DB: postgresdb
+  POSTGRES_DB: postgresadmin    # TODO: remove me
   POSTGRES_USER: postgresadmin
   POSTGRES_PASSWORD: admin123
   PGDATA: "/var/lib/postgresql/data/pgdata"
