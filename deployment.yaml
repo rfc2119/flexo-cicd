@@ -1,0 +1,69 @@
+# TODO: hard-coded values
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Currently when a pod is created, its hostname is the Pod's metadata.name value.
+  name: flexo-dep
+  labels:
+    app: flexo
+spec:
+  replicas: 3
+  selector:     # how will the deployment find its pods ?
+    matchLabels:        # should satisfy the labels provided by pods
+      app: flexo
+      type: api
+  template:
+    metadata:
+      name: flexo-engine
+      labels:   # pods labels. creates selectors for pods
+        app: flexo
+        type: api
+    spec:
+      containers:       # containers running on this pod (only one here)
+      - name: flexo
+        # TODO: THIS SHOULD BE PRIVATE!
+        image: 421352775051.dkr.ecr.ap-northeast-2.amazonaws.com/seccdc/flexo:latest
+        # TODO: start here
+        env:
+          - name: DBADDR
+            value: postgres-svc:5432   # TODO: will port num work ?
+          - name: DBUSER
+            valueFrom:
+              configMapKeyRef:
+                name: postgres-config
+                key: POSTGRES_USER
+          - name: DBPASS
+            valueFrom:
+              configMapKeyRef:
+                name: postgres-config
+                key: POSTGRES_PASSWORD
+          - name: DBNAME
+            valueFrom:
+              configMapKeyRef:
+                name: postgres-config
+                key: POSTGRES_DB
+          - name: DBSSL
+            value: "disable" 
+          - name: SECRET
+            value: "shared_secret"
+          - name: GIN_MODE
+            value: "release"
+
+        ports:        # TODO: does this expose ports ?
+          - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flexo-svc
+  labels:
+    app: flexo
+spec:
+  type: ClusterIP
+  ports:
+   - port: 8080
+     targetPort: 8080
+  selector:
+   app: flexo
+   type: api

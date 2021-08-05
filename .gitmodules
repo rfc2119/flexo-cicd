@@ -1,0 +1,3 @@
+[submodule "eks-cloudformation"]
+	path = eks-cloudformation
+	url = git@github.com:rfc2119/eks-cloudformation

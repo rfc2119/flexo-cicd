@@ -25,7 +25,7 @@ package util
 import (
 	"fmt"
 	"net"
-	"os"
+	// "os"
 	"strings"
 
 	"github.com/SECCDC/flexo/model"
@@ -35,12 +35,12 @@ import (
 )
 
 func DBinit(user, pass, address, dbName, sslmode string) error {
-	db := DBcreate(user, pass, address, dbName, sslmode)
-	if db.Error != nil {
-		fmt.Println(db.Error)
-		fmt.Println("Could not create database")
-		os.Exit(3)
-	}
+	// db := DBcreate(user, pass, address, dbName, sslmode)
+	// if db.Error != nil {
+	// 	fmt.Println(db.Error)
+	// 	fmt.Println("Could not create database")
+	// 	os.Exit(3)
+	// }
 
 	return DBconnect(user, pass, address, dbName, sslmode).AutoMigrate(&model.Team{}, &model.Category{}, &model.Target{}, &model.Event{}, &model.EcomEvent{})
 }
@@ -57,7 +57,8 @@ func DBconnect(user, pass, address, dbName, sslmode string) *gorm.DB {
 		panic("DB address isn't of the expected form host:port")
 	}
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s, sslmode=%s", host, user, pass, dbName, port, sslmode)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s  sslmode=%s dbname=%s", host, port, user, pass, sslmode, dbName)
+	fmt.Println(dsn)
 
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
@@ -74,12 +75,17 @@ func DBconnect(user, pass, address, dbName, sslmode string) *gorm.DB {
 func extractHostAndPort(address string) (string, string, error) {
 	// Is this a domain ?
 	splitAddr := strings.Split(address, ":")
-	_, e := net.LookupHost(splitAddr[0])
+	addrs, e := net.LookupHost(splitAddr[0])
 	if e == nil {
 		return splitAddr[0], splitAddr[1], nil
 	}
 
+	fmt.Printf("Looked up host: %s \nerror: %s", addrs, e)
 	// If not, is this an IP?
 	addr, err := net.ResolveTCPAddr("tcp", address)
+	if err != nil {
+		fmt.Printf("address or IP %s could not be resolved", address)
+		return "", "", err
+	}
 	return addr.IP.String(), fmt.Sprintf("%d", addr.Port), err
 }

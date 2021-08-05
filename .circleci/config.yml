@@ -1,6 +1,82 @@
 version: 2.1
 
 
+parameters:
+  docker-image-name:
+    type: string
+    default: "seccdc/flexo"
+
+# commands:
+#  # TODO: needs improvment
+#  install-awscli-cmd:
+#    description: Installs AWS CLI
+#    # parameters:
+#    #   pkg-manager:
+#    #     type: string
+#    #     default: "apt"
+#    steps:
+#      - run:
+#          name: Install AWS CLI through Python 3
+#          when: on_fail     # TODO: this should not be here
+#          command: |
+#            # version=$(cat /proc/version)
+#            # if [[ "$version" =~ "deb" ]]; then
+#            if command -v "apt"; then
+#              CMD="apt install -y python3 python3-pip"
+#              if [ "$EUID" -ne 0 ]; then    # must be run by a priviliged user
+#                sudo $CMD
+#              else
+#                $CMD
+#              fi
+#            elif command -v "apk"; then
+#              apk add python3 py3-pip
+#            elif command -v "yum"; then
+#              yum install -y python3 python3-pip
+#            else
+#              echo "package manager not supported ?"
+#            fi
+#            python3 -m pip install awscli
+#
+#  destroy-environment:
+#    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+#    parameters:
+#      id:
+#        type: env_var_name  # see https://circleci.com/docs/2.0/reusing-config/#environment-variable-name
+#        default: ID
+#      install_deps:
+#        type: boolean
+#        default: false
+#    steps:
+#      - run:
+#          name: print statement
+#          when: on_fail
+#          command: echo << parameters.install_deps >> from top-level steps
+#      - when:
+#          condition:
+#            and:
+#              - << parameters.install_deps >>
+#              # TODO: start here. apparently on_fail inside a when inside steps always evaluates to true ?
+#              # find out, and continue to:
+#              # 1. work on the cloudfront-update branch. ensure a sane build, and use cloudfront
+#              # 2. take scnreenshots and urls
+#              # 3. use prometheus and grafana
+#              # 4. submit
+#              # 5. configure your personal vps to host password store and website
+#              # TODO: on_fail
+#              - on_fail
+#          steps:
+#            - run: echo << parameters.install_deps >> from 'when' step
+#            - install-awscli-cmd
+#      - run:
+#          name: Destroy environments
+#          when: on_fail   # will this works ?
+#          command: |
+#            aws s3 rm s3://udapeople-${<< parameters.id >>}/ --recursive
+#            aws cloudformation delete-stack --stack-name udapeople-frontend-${<< parameters.id >>}
+#            aws cloudformation delete-stack --stack-name udapeople-backend-${<< parameters.id >>}
+#            # TODO: cloudfront stack should not be created by hand
+#            # aws cloudformation delete-stack --stack-name udapeople-cloudfront
+
             
 jobs:
   build:
@@ -11,27 +87,28 @@ jobs:
       - run:
           name: Build flexo
           command: |
-            CGO_ENABLED=0 go build -a -ldflags "-s -w -extldflags '-static'" -o flexo
-            echo done building
+            CGO_ENABLED=0 go build -a -ldflags "-s -w -extldflags '-static'" -o ./flexo.bin
       # persist the built binary
       - persist_to_workspace:
-          root: ./
+          root: /home/circleci/project/   # TODO: redundant
           paths:
-            - flexo
+            - flexo.bin
 
   lint:
     docker:
       - image: cimg/go:1.16.6
     steps:
+      - checkout
       - run:
           name: Install and Run Go Linter
           command: |
             # add GOPATH to default path
-            export PATH=$PATH:$(go env GOPATH)
+            export GOPATH=$(go env GOPATH)
+            export PATH=$PATH:$GOPATH
             # binary will be $(go env GOPATH)/bin/golangci-lint
             curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.41.1
             # run the linter
-            golangci-lint run
+            golangci-lint run --disable-all -E govet,gosimple
 
   test:
     docker:
@@ -39,27 +116,120 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: ./
+          at: /home/circleci/project/   # TODO: redundant.
       - run: ls -l
-      - run: echo todo
-              
+      - run: echo "todo docker-compose (change the executor ?)"
+      # - run:
+      #     name: testing docker compose
+      #     command: |
+      #       SECRET=halp DB_USER=flexo docker-compose up
+
+
+  push:
+    # docker:
+    #   - image: amazon/aws-cli:latest
+    machine: true
+    environment:
+      IMG_NAME: << pipeline.parameters.docker-image-name >>
+    steps:
+      - checkout
+      # - setup_remote_docker:
+      #     docker_layer_caching: false
+      #     version: "20.10.2"
+      - run:
+          name: Install AWS CLI through curl
+          command: |
+            # see https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -q awscliv2.zip
+            sudo ./aws/install
+      - run:
+          name: Build docker image
+          command: |
+            # ECR_REGISTRY is an envvar registered within circleci settings
+            pass=$(aws ecr get-login-password )
+            echo $pass | docker login --username AWS --password-stdin $ECR_REGISTRY
+            docker build -t $IMG_NAME .
+            docker images
+            docker tag $IMG_NAME:latest $ECR_REGISTRY/$IMG_NAME:latest
+            docker push $ECR_REGISTRY/$IMG_NAME:latest
+
+  deploy-to-eks:
+    docker:
+      - image: amazon/aws-cli:latest
+    environment:
+      IMG_NAME: << pipeline.parameters.docker-image-name >>
+    steps:
+      - checkout
+      # - run:
+      #     name: Install AWS CLI through curl
+      #     command: |
+      #       # see https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
+      #       curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      #       unzip -q awscliv2.zip
+      #       sudo ./aws/install
+      - run:
+          name: Install git
+          command: yum install -y git
+      # checking-out w/ git submodules
+      # see https://circleci.com/docs/2.0/configuration-reference/?section=configuration#checkout
+      - run: git submodule sync
+      - run: git submodule update --init
+      - run:
+          name: Install kubectl v1.21
+          command: |
+            # instructions: https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-kubectl-binary-with-curl-on-linux
+            curl -LO "https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl"
+            # validate signatures
+            curl -LO "https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl.sha256"
+            echo "$(<kubectl.sha256) kubectl" | sha256sum --check
+            install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      - run:
+          name: Deploy EKS cluster
+          working_directory: eks-cloudformation   # a git submodule
+          no_output_timeout: 30m
+          command: |
+            # original code: github.com/weibeld/eks-cloudformation
+            ./up.sh \
+              --num-worker-nodes 2 \
+              --worker-nodes-instance-type t2.small \
+              --stack-name eks-cluster \
+              --key-pair-name udacity-nd-proj3 \
+              --update-kubectl-context
+      - run:
+          name: Deploy our application
+          command: |
+            aws eks update-kubeconfig --name eks-cluster    # TODO: hard-coded cluster/stack name
+            # TODO: start here. modify deployment.yaml file to fetch the flexo image from private ECR
+            # then, apply the spec using "kubectl apply -f <file>". you need to figure out how to
+            # source the repo name (an env var, considered a secret) inside k8s
+            # after that, it is expected that no other permission is needed to grab the private
+            # docker image (see https://docs.aws.amazon.com/AmazonECR/latest/userguide/ECR_on_EKS.html)
+            # after that, try to use ansible to do anything useful. this way you would have used all
+            # components learned in these courses
+            kubectl apply -f deployment-pg.yaml
+            kubectl get deployments
+            kubectl apply -f deployment.yaml
+            kubectl get deployments
 
             
 
 workflows:
   default:
     jobs:
-      - lint
-      - build
-      - test:
-          requires: [build]
-      # - deploy:
-      #     requires: [test, scan]
-      #     # TODO: remove me in prod (the next line)
-      #     # requires: [build-backend]
-      #     filters:
-      #       branches:
-      #         only: [main]
+      # - lint
+      # - build
+      # - test:
+      #     requires: [build]
+      - push
+      # - push:
+      #     requires: [test]
+      - deploy-to-eks:
+          # requires: [test, push]
+          requires: [push]
+          filters:
+            branches:
+              only: [deploy_to_eks]
       # - configure-infrastructure:
       #     requires: [deploy-infrastructure]
       # - run-migrations:
