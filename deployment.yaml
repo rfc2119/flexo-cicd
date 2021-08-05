@@ -14,7 +14,7 @@ spec:
     matchLabels:        # should satisfy the labels provided by pods
       app: flexo
       type: api
-	strategy:
+  strategy:
     type: RollingUpdate		# NOTE: default strategy; added here for verbosity
     rollingUpdate:
       maxUnavailable: 1
