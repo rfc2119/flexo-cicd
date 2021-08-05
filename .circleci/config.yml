@@ -68,6 +68,8 @@ jobs:
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip -q awscliv2.zip
             sudo ./aws/install
+      - restore_cache:
+          keys: [flexo-build-go-modules]
       - run:
           name: Build docker image
           command: |
@@ -79,6 +81,9 @@ jobs:
             TAG=$(git describe --abbrev=0 --tags)  # get the latest tag from current branch
             docker tag $IMG_NAME:latest $ECR_REGISTRY/$IMG_NAME:$TAG
             docker push $ECR_REGISTRY/$IMG_NAME:$TAG
+      - save_cache:
+          paths: [/home/circleci/go]
+          key: flexo-build-go-modules
 
   deploy-to-eks:
     docker:
