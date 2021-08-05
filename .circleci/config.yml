@@ -135,4 +135,4 @@ workflows:
           requires: [test, push]
           filters:
             branches:
-              only: [deploy_to_eks]
+              only: [main]
