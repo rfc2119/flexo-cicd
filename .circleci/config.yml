@@ -149,4 +149,4 @@ workflows:
           requires: [push]
           filters:
             branches:
-              only: [deployment-strategy]
+              only: [main]

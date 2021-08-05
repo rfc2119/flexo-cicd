@@ -55,6 +55,7 @@ func Migrate(c Config) error {
 
 func Run(c Config) {
 	fmt.Println("Starting Flexo...")
+	fmt.Println("Hello from version v0.1.19.4")
 	s := Server{
 		Router: gin.New(),
 		DB:     util.DBconnect(c.DBUser, c.DBPass, c.DBAddr, c.DBName, c.DBssl),
