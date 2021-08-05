@@ -99,6 +99,7 @@ func Run(c Config) {
 
 	s.Router.GET("/healthz", s.healthCheck)
 	s.Router.Run()
+	fmt.Println("Hello from new version! (possible v0.1.19.2)")
 
 	defer fmt.Println("Goodbye!")
 }
